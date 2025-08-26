@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAdminApp } from '../../contexts/AppContext';
-import { Edit3, Save, X, Plus, Trash2, Upload, Eye, EyeOff } from 'lucide-react';
+import { Edit3, Save, X, Plus, Trash2, Upload, Eye, EyeOff, Image as ImageIcon } from 'lucide-react';
 
 const AdminRooms: React.FC = () => {
   const { rooms, addRoom, updateRoom, deleteRoom } = useAdminApp();
@@ -17,6 +17,9 @@ const AdminRooms: React.FC = () => {
     available: true,
     description: ''
   });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleEditRoom = (room: any) => {
     setEditingRoom(room.id);
@@ -88,20 +91,42 @@ const AdminRooms: React.FC = () => {
     }
   };
 
-  const addImage = (imageUrl: string, isEdit = false) => {
-    if (imageUrl.trim()) {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    
+    // Simulate upload process - in a real app, you would upload to a server here
+    setTimeout(() => {
+      const newImages = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const imageUrl = URL.createObjectURL(file); // Create a local URL for preview
+        newImages.push(imageUrl);
+      }
+      
       if (isEdit) {
         setEditData(prev => ({
           ...prev,
-          images: [...prev.images, imageUrl.trim()]
+          images: [...prev.images, ...newImages]
         }));
       } else {
         setNewRoomData(prev => ({
           ...prev,
-          images: [...prev.images, imageUrl.trim()]
+          images: [...prev.images, ...newImages]
         }));
       }
-    }
+      
+      setUploading(false);
+      
+      // Reset file input
+      if (isEdit && editFileInputRef.current) {
+        editFileInputRef.current.value = '';
+      } else if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }, 1000);
   };
 
   const removeImage = (index: number, isEdit = false) => {
@@ -116,6 +141,27 @@ const AdminRooms: React.FC = () => {
         images: prev.images.filter((_, i) => i !== index)
       }));
     }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, isEdit = false) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const inputEvent = {
+        target: {
+          files: files
+        }
+      } as unknown as React.ChangeEvent<HTMLInputElement>;
+      
+      handleImageUpload(inputEvent, isEdit);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   return (
@@ -245,41 +291,69 @@ const AdminRooms: React.FC = () => {
               </div>
             </div>
 
-            {/* Images */}
+            {/* Images - Upload Section */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Images (URLs)</label>
-              <div className="flex gap-2 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Room Images</label>
+              
+              <div 
+                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 transition-colors mb-4"
+                onDrop={(e) => handleDrop(e)}
+                onDragOver={handleDragOver}
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <input
-                  type="url"
-                  placeholder="Add image URL"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addImage(e.currentTarget.value);
-                      e.currentTarget.value = '';
-                    }
-                  }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e)}
+                  className="hidden"
                 />
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {newRoomData.images.map((image, index) => (
-                  <div key={index} className="relative">
-                    <img
-                      src={image}
-                      alt={`Room ${index + 1}`}
-                      className="w-full h-20 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
+                
+                {uploading ? (
+                  <div className="flex flex-col items-center">
+                    <div className="animate-pulse bg-gray-200 h-12 w-12 rounded-full mb-2 flex items-center justify-center">
+                      <ImageIcon className="h-6 w-6 text-gray-500" />
+                    </div>
+                    <p className="text-sm text-gray-600">Uploading images...</p>
                   </div>
-                ))}
+                ) : (
+                  <>
+                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">
+                      Drag & drop images here or click to browse
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Supports JPG, PNG, WEBP - Max 5MB each
+                    </p>
+                  </>
+                )}
               </div>
+              
+              {/* Image Previews */}
+              {newRoomData.images.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Uploaded Images</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {newRoomData.images.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={image}
+                          alt={`Room ${index + 1}`}
+                          className="w-full h-20 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center">
@@ -443,6 +517,214 @@ const AdminRooms: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Edit Room Modal */}
+      {editingRoom && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">Edit Room</h2>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Room Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editData.name || ''}
+                    onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
+                  <select
+                    value={editData.type || 'AC'}
+                    onChange={(e) => setEditData(prev => ({ ...prev, type: e.target.value as 'AC' | 'Non-AC' }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="AC">AC</option>
+                    <option value="Non-AC">Non-AC</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price per Night (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={editData.price || 0}
+                    onChange={(e) => setEditData(prev => ({ ...prev, price: Number(e.target.value) }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (Guests)</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={editData.capacity || 1}
+                    onChange={(e) => setEditData(prev => ({ ...prev, capacity: Number(e.target.value) }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={editData.description || ''}
+                  onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Amenities */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amenities</label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="Add amenity"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addAmenity(e.currentTarget.value, true);
+                        e.currentTarget.value = '';
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {editData.amenities?.map((amenity: string, index: number) => (
+                    <span
+                      key={index}
+                      className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm flex items-center"
+                    >
+                      {amenity}
+                      <button
+                        type="button"
+                        onClick={() => removeAmenity(index, true)}
+                        className="ml-1 text-blue-600 hover:text-blue-800"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Images - Upload Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Room Images</label>
+                
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 transition-colors mb-4"
+                  onDrop={(e) => handleDrop(e, true)}
+                  onDragOver={handleDragOver}
+                  onClick={() => editFileInputRef.current?.click()}
+                >
+                  <input
+                    ref={editFileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, true)}
+                    className="hidden"
+                  />
+                  
+                  {uploading ? (
+                    <div className="flex flex-col items-center">
+                      <div className="animate-pulse bg-gray-200 h-12 w-12 rounded-full mb-2 flex items-center justify-center">
+                        <ImageIcon className="h-6 w-6 text-gray-500" />
+                      </div>
+                      <p className="text-sm text-gray-600">Uploading images...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">
+                        Drag & drop images here or click to browse
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Supports JPG, PNG, WEBP - Max 5MB each
+                      </p>
+                    </>
+                  )}
+                </div>
+                
+                {/* Image Previews */}
+                {editData.images?.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Room Images</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {editData.images.map((image: string, index: number) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={image}
+                            alt={`Room ${index + 1}`}
+                            className="w-full h-20 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index, true)}
+                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="edit-available"
+                  checked={editData.available || false}
+                  onChange={(e) => setEditData(prev => ({ ...prev, available: e.target.checked }))}
+                  className="mr-2"
+                />
+                <label htmlFor="edit-available" className="text-sm font-medium text-gray-700">
+                  Available for booking
+                </label>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  onClick={handleSaveRoom}
+                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
