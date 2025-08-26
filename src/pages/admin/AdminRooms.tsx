@@ -482,114 +482,180 @@ const AdminRooms: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {rooms.map((room) => (
-                <tr key={room.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <img
-                        src={room.images[0] || 'https://via.placeholder.com/48'}
-                        alt={room.name}
-                        className="h-12 w-12 rounded-lg object-cover"
-                      />
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{room.name}</div>
-                        <div className="text-sm text-gray-500">{room.amenities.slice(0, 2).join(', ')}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      room.type === 'AC' 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {room.type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {room.capacity} guests
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {editingRoom === room.id ? (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="number"
-                          value={editData.price || 0}
-                          onChange={(e) => setEditData(prev => ({ ...prev, price: Number(e.target.value) }))}
-                          className="w-24 px-2 py-1 text-sm border border-gray-300 rounded"
-                        />
-                        <button
-                          onClick={handleSaveRoom}
-                          className="text-green-600 hover:text-green-800"
-                        >
-                          <Save className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-900">
-                          ₹{room.price}
+                <React.Fragment key={room.id}>
+                  {editingRoom === room.id ? (
+                    // Edit Mode Row
+                    <tr className="bg-blue-50">
+                      <td className="px-6 py-4" colSpan={6}>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Room Name</label>
+                              <input
+                                type="text"
+                                required
+                                value={editData.name || ''}
+                                onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
+                              <select
+                                value={editData.type || 'AC'}
+                                onChange={(e) => setEditData(prev => ({ ...prev, type: e.target.value as 'AC' | 'Non-AC' }))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              >
+                                <option value="AC">AC</option>
+                                <option value="Non-AC">Non-AC</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Price per Night (₹)</label>
+                              <input
+                                type="number"
+                                required
+                                min="0"
+                                value={editData.price || 0}
+                                onChange={(e) => setEditData(prev => ({ ...prev, price: Number(e.target.value) }))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (Guests)</label>
+                              <input
+                                type="number"
+                                required
+                                min="1"
+                                value={editData.capacity || 1}
+                                onChange={(e) => setEditData(prev => ({ ...prev, capacity: Number(e.target.value) }))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <textarea
+                              required
+                              rows={3}
+                              value={editData.description || ''}
+                              onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                          </div>
+
+                          <div className="flex items-center space-x-4">
+                            <button
+                              onClick={handleSaveRoom}
+                              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                            >
+                              <Save className="h-4 w-4 mr-1" />
+                              Save
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors flex items-center"
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    // Normal View Row
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <img
+                            src={room.images[0] || 'https://via.placeholder.com/48'}
+                            alt={room.name}
+                            className="h-12 w-12 rounded-lg object-cover"
+                          />
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{room.name}</div>
+                            <div className="text-sm text-gray-500">{room.amenities.slice(0, 2).join(', ')}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          room.type === 'AC' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {room.type}
                         </span>
-                        <button
-                          onClick={() => handleEditRoom(room)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        room.available 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {room.available ? 'Available' : 'Unavailable'}
-                      </span>
-                      <button
-                        onClick={() => updateRoom(room.id, { available: !room.available })}
-                        className="text-gray-600 hover:text-gray-800"
-                      >
-                        {room.available ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEditRoom(room)}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRoom(room.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {room.capacity} guests
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-gray-900">
+                            ₹{room.price}
+                          </span>
+                          <button
+                            onClick={() => handleEditRoom(room)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-2">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            room.available 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {room.available ? 'Available' : 'Unavailable'}
+                          </span>
+                          <button
+                            onClick={() => updateRoom(room.id, { available: !room.available })}
+                            className="text-gray-600 hover:text-gray-800"
+                          >
+                            {room.available ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditRoom(room)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRoom(room.id)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Edit Room Modal */}
+      {/* Edit Room Modal for amenities and images */}
       {editingRoom && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Edit Room</h2>
+              <h2 className="text-xl font-semibold text-gray-800">Edit Room Details</h2>
               <button
                 onClick={handleCancelEdit}
                 className="text-gray-400 hover:text-gray-600"
@@ -599,66 +665,6 @@ const AdminRooms: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Room Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={editData.name || ''}
-                    onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
-                  <select
-                    value={editData.type || 'AC'}
-                    onChange={(e) => setEditData(prev => ({ ...prev, type: e.target.value as 'AC' | 'Non-AC' }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="AC">AC</option>
-                    <option value="Non-AC">Non-AC</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price per Night (₹)</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    value={editData.price || 0}
-                    onChange={(e) => setEditData(prev => ({ ...prev, price: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (Guests)</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={editData.capacity || 1}
-                    onChange={(e) => setEditData(prev => ({ ...prev, capacity: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  required
-                  rows={3}
-                  value={editData.description || ''}
-                  onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
               {/* Amenities */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Amenities</label>
