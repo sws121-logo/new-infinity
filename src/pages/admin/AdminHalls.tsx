@@ -16,6 +16,17 @@ const AdminHalls: React.FC = () => {
     available: true,
     description: ''
   });
+  const [newAmenity, setNewAmenity] = useState('');
+  const [newImageUrl, setNewImageUrl] = useState('');
+
+  // Sample amenities list
+  const sampleAmenities = [
+    'Towel', 'Soap', 'Shampoo', 'Electric kettle', 'Tea', 
+    'Coffee', 'Milk powder', 'Sugar pouch', 'Geyser', 'AC', 
+    'TV', 'Wardrobe', 'CCTV', 'Fire extinguisher', 'WiFi', 
+    'Room service', 'Printer & photocopy (chargeable)', 
+    'Indoor games (carrom & chess etc) (chargeable)'
+  ];
 
   const handleEditHall = (hall: any) => {
     setEditingHall(hall.id);
@@ -116,6 +127,26 @@ const AdminHalls: React.FC = () => {
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // In a real application, you would upload the file to a server
+      // and get back a URL. For now, we'll create a local URL for preview.
+      const imageUrl = URL.createObjectURL(file);
+      if (isEdit) {
+        setEditData(prev => ({
+          ...prev,
+          images: [...prev.images, imageUrl]
+        }));
+      } else {
+        setNewHallData(prev => ({
+          ...prev,
+          images: [...prev.images, imageUrl]
+        }));
+      }
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -199,9 +230,33 @@ const AdminHalls: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Amenities</label>
               <div className="flex gap-2 mb-2">
+                <select
+                  value={newAmenity}
+                  onChange={(e) => setNewAmenity(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="">Select an amenity</option>
+                  {sampleAmenities.map((amenity, index) => (
+                    <option key={index} value={amenity}>{amenity}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newAmenity) {
+                      addAmenity(newAmenity);
+                      setNewAmenity('');
+                    }
+                  }}
+                  className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="flex gap-2 mb-2">
                 <input
                   type="text"
-                  placeholder="Add amenity"
+                  placeholder="Or enter custom amenity"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -233,20 +288,42 @@ const AdminHalls: React.FC = () => {
 
             {/* Images */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Images (URLs)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Images</label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
               <div className="flex gap-2 mb-2">
                 <input
                   type="url"
-                  placeholder="Add image URL"
+                  placeholder="Or add image URL"
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      addImage(e.currentTarget.value);
-                      e.currentTarget.value = '';
+                      addImage(newImageUrl);
+                      setNewImageUrl('');
                     }
                   }}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newImageUrl) {
+                      addImage(newImageUrl);
+                      setNewImageUrl('');
+                    }
+                  }}
+                  className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700"
+                >
+                  Add URL
+                </button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {newHallData.images.map((image, index) => (
@@ -300,6 +377,220 @@ const AdminHalls: React.FC = () => {
         </div>
       )}
 
+      {/* Edit Modal */}
+      {editingHall && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl max-h-screen overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">Edit Party Hall</h2>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hall Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editData.name || ''}
+                    onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (Guests)</label>
+                  <input
+                    type="number"
+                    required
+                    min="10"
+                    value={editData.capacity || 0}
+                    onChange={(e) => setEditData(prev => ({ ...prev, capacity: Number(e.target.value) }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price per Event (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={editData.price || 0}
+                    onChange={(e) => setEditData(prev => ({ ...prev, price: Number(e.target.value) }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={editData.description || ''}
+                  onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Amenities */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amenities</label>
+                <div className="flex gap-2 mb-2">
+                  <select
+                    value={newAmenity}
+                    onChange={(e) => setNewAmenity(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">Select an amenity</option>
+                    {sampleAmenities.map((amenity, index) => (
+                      <option key={index} value={amenity}>{amenity}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newAmenity) {
+                        addAmenity(newAmenity, true);
+                        setNewAmenity('');
+                      }
+                    }}
+                    className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700"
+                  >
+                    Add
+                  </button>
+                </div>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="Or enter custom amenity"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addAmenity(e.currentTarget.value, true);
+                        e.currentTarget.value = '';
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {editData.amenities?.map((amenity: string, index: number) => (
+                    <span
+                      key={index}
+                      className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm flex items-center"
+                    >
+                      {amenity}
+                      <button
+                        type="button"
+                        onClick={() => removeAmenity(index, true)}
+                        className="ml-1 text-purple-600 hover:text-purple-800"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Images */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Images</label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, true)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="url"
+                    placeholder="Or add image URL"
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addImage(newImageUrl, true);
+                        setNewImageUrl('');
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newImageUrl) {
+                        addImage(newImageUrl, true);
+                        setNewImageUrl('');
+                      }
+                    }}
+                    className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700"
+                  >
+                    Add URL
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {editData.images?.map((image: string, index: number) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={image}
+                        alt={`Hall ${index + 1}`}
+                        className="w-full h-20 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index, true)}
+                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="edit-available"
+                  checked={editData.available || false}
+                  onChange={(e) => setEditData(prev => ({ ...prev, available: e.target.checked }))}
+                  className="mr-2"
+                />
+                <label htmlFor="edit-available" className="text-sm font-medium text-gray-700">
+                  Available for booking
+                </label>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  onClick={handleSaveHall}
+                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Halls Table */}
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="overflow-x-auto">
@@ -343,40 +634,11 @@ const AdminHalls: React.FC = () => {
                     {hall.capacity} guests
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingHall === hall.id ? (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="number"
-                          value={editData.price || 0}
-                          onChange={(e) => setEditData(prev => ({ ...prev, price: Number(e.target.value) }))}
-                          className="w-28 px-2 py-1 text-sm border border-gray-300 rounded"
-                        />
-                        <button
-                          onClick={handleSaveHall}
-                          className="text-green-600 hover:text-green-800"
-                        >
-                          <Save className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-900">
-                          ₹{hall.price.toLocaleString()}
-                        </span>
-                        <button
-                          onClick={() => handleEditHall(hall)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-900">
+                        ₹{hall.price.toLocaleString()}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
