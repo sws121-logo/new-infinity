@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useAdminApp } from '../../contexts/AppContext';
-import { Edit3, Save, X, Plus, Trash2, Upload, Eye, EyeOff, Image as ImageIcon } from 'lucide-react';
+import { Edit3, Save, X, Plus, Trash2, Upload, Eye, EyeOff, Image as ImageIcon, ChevronDown } from 'lucide-react';
 
 const AdminRooms: React.FC = () => {
   const { rooms, addRoom, updateRoom, deleteRoom } = useAdminApp();
@@ -18,8 +18,34 @@ const AdminRooms: React.FC = () => {
     description: ''
   });
   const [uploading, setUploading] = useState(false);
+  const [showAmenitiesDropdown, setShowAmenitiesDropdown] = useState(false);
+  const [showEditAmenitiesDropdown, setShowEditAmenitiesDropdown] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
+  const amenityInputRef = useRef<HTMLInputElement>(null);
+  const editAmenityInputRef = useRef<HTMLInputElement>(null);
+
+  // Predefined list of amenities
+  const predefinedAmenities = [
+    'Towel',
+    'Soap',
+    'Shampoo',
+    'Electric kettle',
+    'Tea',
+    'Coffee',
+    'Milk powder',
+    'Sugar pouch',
+    'Geyser',
+    'AC',
+    'TV',
+    'Wardrobe',
+    'CCTV',
+    'Fire extinguisher',
+    'WiFi',
+    'Room service',
+    'Printer & photocopy (chargeable)',
+    'Indoor games (carrom & chess etc) (chargeable)'
+  ];
 
   const handleEditRoom = (room: any) => {
     setEditingRoom(room.id);
@@ -62,17 +88,24 @@ const AdminRooms: React.FC = () => {
   };
 
   const addAmenity = (amenity: string, isEdit = false) => {
-    if (amenity.trim()) {
+    const trimmedAmenity = amenity.trim();
+    if (trimmedAmenity) {
       if (isEdit) {
-        setEditData(prev => ({
-          ...prev,
-          amenities: [...prev.amenities, amenity.trim()]
-        }));
+        // Check if amenity already exists
+        if (!editData.amenities?.includes(trimmedAmenity)) {
+          setEditData(prev => ({
+            ...prev,
+            amenities: [...(prev.amenities || []), trimmedAmenity]
+          }));
+        }
       } else {
-        setNewRoomData(prev => ({
-          ...prev,
-          amenities: [...prev.amenities, amenity.trim()]
-        }));
+        // Check if amenity already exists
+        if (!newRoomData.amenities.includes(trimmedAmenity)) {
+          setNewRoomData(prev => ({
+            ...prev,
+            amenities: [...prev.amenities, trimmedAmenity]
+          }));
+        }
       }
     }
   };
@@ -162,6 +195,15 @@ const AdminRooms: React.FC = () => {
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+  };
+
+  const selectAmenity = (amenity: string, isEdit = false) => {
+    addAmenity(amenity, isEdit);
+    if (isEdit) {
+      setShowEditAmenitiesDropdown(false);
+    } else {
+      setShowAmenitiesDropdown(false);
+    }
   };
 
   return (
@@ -260,6 +302,7 @@ const AdminRooms: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Amenities</label>
               <div className="flex gap-2 mb-2">
                 <input
+                  ref={amenityInputRef}
                   type="text"
                   placeholder="Add amenity"
                   onKeyPress={(e) => {
@@ -271,6 +314,29 @@ const AdminRooms: React.FC = () => {
                   }}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowAmenitiesDropdown(!showAmenitiesDropdown)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  
+                  {showAmenitiesDropdown && (
+                    <div className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                      {predefinedAmenities.map((amenity, index) => (
+                        <div
+                          key={index}
+                          onClick={() => selectAmenity(amenity)}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        >
+                          {amenity}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 {newRoomData.amenities.map((amenity, index) => (
@@ -598,6 +664,7 @@ const AdminRooms: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Amenities</label>
                 <div className="flex gap-2 mb-2">
                   <input
+                    ref={editAmenityInputRef}
                     type="text"
                     placeholder="Add amenity"
                     onKeyPress={(e) => {
@@ -609,6 +676,29 @@ const AdminRooms: React.FC = () => {
                     }}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditAmenitiesDropdown(!showEditAmenitiesDropdown)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    
+                    {showEditAmenitiesDropdown && (
+                      <div className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                        {predefinedAmenities.map((amenity, index) => (
+                          <div
+                            key={index}
+                            onClick={() => selectAmenity(amenity, true)}
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                          >
+                            {amenity}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {editData.amenities?.map((amenity: string, index: number) => (
